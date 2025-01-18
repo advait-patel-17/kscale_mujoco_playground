@@ -1,6 +1,16 @@
 import mujoco
 import numpy as np
 import mujoco.viewer
+import pathlib
+
+ROOT_PATH = pathlib.Path("playground/zbot")
+FEET_ONLY_FLAT_TERRAIN_XML = (
+    ROOT_PATH / "xmls" / "scene_mjx_feetonly_flat_terrain.xml"
+)
+FEET_ONLY_ROUGH_TERRAIN_XML = (
+    ROOT_PATH / "xmls" / "scene_mjx_feetonly_rough_terrain.xml"
+)
+
 
 def visualize_scene(xml_path):
     # Load the XML file
@@ -18,5 +28,4 @@ def visualize_scene(xml_path):
             viewer.sync()
 
 if __name__ == "__main__":
-    xml_path = "../resources/zbot/scene_mjx_feetonly_rough_terrain.xml"
-    visualize_scene(xml_path)
+    visualize_scene(FEET_ONLY_FLAT_TERRAIN_XML.as_posix())
