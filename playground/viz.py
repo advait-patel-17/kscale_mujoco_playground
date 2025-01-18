@@ -28,4 +28,4 @@ def visualize_scene(xml_path):
             viewer.sync()
 
 if __name__ == "__main__":
-    visualize_scene(FEET_ONLY_FLAT_TERRAIN_XML.as_posix())
+    visualize_scene("playground/zbot/xmls/zbot_feet_only.xml")

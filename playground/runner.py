@@ -19,6 +19,8 @@ from zbot import joystick as zbot_joystick
 from zbot import randomize as zbot_randomize
 from zbot import zbot_constants
 
+from brax.training.acme import running_statistics
+
 from mujoco_playground import wrapper
 from mujoco_playground._src.gait import draw_joystick_command
 
@@ -158,6 +160,19 @@ class ZBotRunner:
         model_path = Path("checkpoints") / f"{self.env_name}_params.pkl"
         with open(model_path, "rb") as f:
             self.params = pickle.load(f)
+        
+        if "network_factory" in self.rl_config:
+            network_factory = functools.partial(
+                ppo_networks.make_ppo_networks,
+                **self.rl_config.network_factory
+            )
+        else:
+            network_factory = ppo_networks.make_ppo_networks
+
+        ppo_network = network_factory(
+            obs_shape, self.env.action_size, preprocess_observations_fn=normalize
+        )
+        self.make_inference_fn = ppo_networks.make_inference_fn(ppo_network)
         self.logger.info("Model loaded successfully")
 
     @functools.partial(jax.jit, static_argnums=(0,))
