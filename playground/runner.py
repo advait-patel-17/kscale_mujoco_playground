@@ -142,8 +142,7 @@ class ZBotRunner:
         self.logger.info(f"Time to jit: {self.times[1] - self.times[0]}")
         self.logger.info(f"Time to train: {self.times[-1] - self.times[1]}")
         
-        if self.args.save_model:
-            self.save_model()
+        self.save_model()
 
     def save_model(self) -> None:
         """Save model parameters"""
@@ -180,6 +179,7 @@ class ZBotRunner:
 
     def evaluate(self) -> None:
         """Run evaluation episodes"""
+        print("EVALUATING")
         eval_env = zbot_joystick.Joystick(task=self.args.task)
         jit_reset = jax.jit(eval_env.reset)
         jit_step = jax.jit(eval_env.step)
