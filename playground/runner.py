@@ -146,29 +146,44 @@ class ZBotRunner:
         
         self.save_model()
 
-    def load_model(self) -> None:
-        """Load model parameters and inference function."""
-        model_path = Path("checkpoints") / f"{self.env_name}_params.pkl"
-        with open(model_path, "rb") as f:
-            checkpoint = pickle.load(f)  # assuming the checkpoint contains both 'params' and 'make_inference_fn'
-        
-        self.params = checkpoint['params']
-        self.make_inference_fn = checkpoint['make_inference_fn']
-        self.logger.info("Model and inference function loaded successfully.")
-
     def save_model(self) -> None:
-        """Save model parameters and inference function."""
+        """Save model parameters"""
         save_dir = Path("checkpoints")
         save_dir.mkdir(exist_ok=True)
         model_path = save_dir / f"{self.env_name}_params.pkl"
         with open(model_path, "wb") as f:
-            # Save the parameters and the make_inference_fn
-            pickle.dump({
-                'params': self.params,
-                'make_inference_fn': self.make_inference_fn
-            }, f)
-        
+            pickle.dump(self.params, f)
         self.logger.info(f"Model saved to: {model_path}")
+
+    def load_model(self) -> None:
+        """Load model parameters"""
+        model_path = Path("checkpoints") / f"{self.env_name}_params.pkl"
+        with open(model_path, "rb") as f:
+            self.params = pickle.load(f)
+        
+        if "network_factory" in self.rl_config:
+            network_factory = functools.partial(
+                ppo_networks.make_ppo_networks,
+                **self.rl_config.network_factory
+            )
+        else:
+            network_factory = ppo_networks.make_ppo_networks
+        
+        key = jax.random.PRNGKey(0)
+        eval_env = zbot_joystick.Joystick(task=self.args.task)
+        jit_reset = jax.jit(eval_env.reset)
+
+        state = jit_reset(key)
+        obs_shape = jax.tree_util.tree_map(lambda x: x.shape, state.obs)
+        normalize = running_statistics.normalize
+
+        ppo_network = network_factory(
+            obs_shape, self.env.action_size, preprocess_observations_fn=normalize
+        )
+
+        self.make_inference_fn = ppo_networks.make_inference_fn(ppo_network)
+        self.logger.info("Model loaded successfully")
+
     @functools.partial(jax.jit, static_argnums=(0,))
     def run_step(
         self, state: jax.Array, rng: jax.Array, 
