@@ -203,7 +203,6 @@ class ZBotRunner:
 
     def evaluate(self) -> None:
         """Run evaluation episodes"""
-        print("EVALUATING")
         eval_env = zbot_joystick.Joystick(task=self.args.task)
         jit_reset = jax.jit(eval_env.reset)
         jit_step = jax.jit(eval_env.step)
